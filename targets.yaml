@@ -177,6 +177,11 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시 버즈3 실버
   mode: api_query
+  query: '갤럭시 버즈3 실버'
+  request:
+    pages: 1
+    sort: sim
+    filter: null
   url: https://search.shopping.naver.com/catalog/53507707537
   browser:
     wait_until: domcontentloaded
