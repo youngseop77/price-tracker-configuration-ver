@@ -85,6 +85,12 @@ targets:
     filter: null
 - name: 갤럭시 버즈3프로 화이트
   mode: api_query
+  request:
+    query: '갤럭시 버즈3프로 화이트'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 버즈3
@@ -110,6 +116,12 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시 버즈3프로 실버
   mode: api_query
+  request:
+    query: '갤럭시 버즈3프로 실버'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 버즈3
@@ -135,6 +147,12 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시 버즈3 화이트
   mode: api_query
+  request:
+    query: '갤럭시 버즈3 화이트'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 버즈3
@@ -186,6 +204,12 @@ targets:
     sort: sim
 - name: 갤럭시 버즈4프로 블랙
   mode: api_query
+  request:
+    query: '갤럭시 버즈4프로 블랙'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 버즈4
@@ -211,6 +235,12 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시 버즈4프로 화이트
   mode: api_query
+  request:
+    query: '갤럭시 버즈4프로 화이트'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 버즈4
@@ -236,6 +266,12 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시 버즈4 블랙
   mode: api_query
+  request:
+    query: '갤럭시 버즈4 블랙'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 버즈4
@@ -260,6 +296,12 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시 버즈4 화이트
   mode: api_query
+  request:
+    query: '갤럭시 버즈4 화이트'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 버즈4
@@ -284,6 +326,12 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시워치8 40mm 실버
   mode: api_query
+  request:
+    query: '갤럭시워치8 40mm 실버'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 워치8
@@ -307,6 +355,12 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시워치8 40mm 그라파이트
   mode: api_query
+  request:
+    query: '갤럭시워치8 40mm 그라파이트'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 워치8
@@ -330,6 +384,12 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시워치8 44mm 실버
   mode: api_query
+  request:
+    query: '갤럭시워치8 44mm 실버'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 워치8
@@ -353,6 +413,12 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시워치8 44mm 그라파이트
   mode: api_query
+  request:
+    query: '갤럭시워치8 44mm 그라파이트'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 워치8
@@ -376,6 +442,12 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시워치8 클래식 블랙
   mode: api_query
+  request:
+    query: '갤럭시워치8 클래식 블랙'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 워치8
@@ -399,6 +471,12 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시워치8 클래식 화이트
   mode: api_query
+  request:
+    query: '갤럭시워치8 클래식 화이트'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 워치8
@@ -422,6 +500,12 @@ targets:
     offer_row_selector: .productByMall_list_item__
 - name: 갤럭시 핏3
   mode: api_query
+  request:
+    query: '갤럭시 핏3'
+    pages: 1
+    sort: sim
+    filter: null
+
   match:
     required_keywords:
     - 핏3
