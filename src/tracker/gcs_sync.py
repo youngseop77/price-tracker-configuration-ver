@@ -5,12 +5,23 @@ from google.cloud import storage
 
 logger = logging.getLogger("tracker.gcs")
 
+def _get_client():
+    """GCS 클라이언트 생성 (인증 실패 시 None 반환)"""
+    try:
+        return storage.Client()
+    except Exception as e:
+        logger.warning(f"GCS Client could not be initialized: {e}")
+        return None
+
 def upload_db(bucket_name: str, source_file: str, dest_name: str = "price_tracker.sqlite3"):
     """SQLite DB를 GCS로 업로드합니다."""
     if not bucket_name:
         return
     try:
-        storage_client = storage.Client()
+        storage_client = _get_client()
+        if not storage_client:
+            logger.error("Skipping GCS upload due to lack of credentials.")
+            return
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(dest_name)
         blob.upload_from_filename(source_file)
@@ -23,7 +34,10 @@ def download_db(bucket_name: str, dest_file: str, source_name: str = "price_trac
     if not bucket_name:
         return False
     try:
-        storage_client = storage.Client()
+        storage_client = _get_client()
+        if not storage_client:
+            logger.error("Skipping GCS download due to lack of credentials.")
+            return False
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(source_name)
         if blob.exists():
