@@ -1,0 +1,22 @@
+common:
+  alert_threshold_percent: 5.0
+
+targets:
+  - name: "정상"
+    mode: "api_query"
+    query: "검색어"
+    request:
+      pages: 1
+  - name: "페이지오류"
+    mode: "api_query"
+    query: "검색어"
+    request:
+      pages: 0
+  - mode: "api_query"
+    query: "이름없음"
+  - name: "중복이름"
+    mode: "browser_url"
+    url: "http://example.com"
+  - name: "중복이름"
+    mode: "browser_url"
+    url: "http://example.com"

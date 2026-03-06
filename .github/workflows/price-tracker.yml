@@ -1,0 +1,69 @@
+name: Naver Price Tracker (Automated)
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Every hour on the hour
+  workflow_dispatch:      # Manual trigger from GitHub UI (Refresh Now)
+  push:
+    branches: [ main ]    # Run on every push to main
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # To allow pushing updates if needed
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Run Price Tracker
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          GCS_BUCKET: ${{ secrets.GCS_BUCKET }}
+          # Path to GCS credentials if using a service account key
+          # GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY_PATH }}
+        run: |
+          # 1. Sync DB from GCS
+          python -m tracker.main sync-from-gcs || echo "First run, no DB in GCS yet"
+          
+          # 2. Collect Prices
+          python -m tracker.main once
+          
+          # 3. Export Dashboard UI
+          python -m tracker.main export-ui
+          
+          # 4. Sync Result back to GCS
+          python -m tracker.main sync-to-gcs
+
+      - name: Upload Dashboard to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './' # Root directory contains dashboard.html and assets
+
+  deploy:
+    needs: track
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

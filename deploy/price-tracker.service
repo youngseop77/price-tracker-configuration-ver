@@ -1,0 +1,14 @@
+[Unit]
+Description=Naver price tracker
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/naver_price_tracker
+EnvironmentFile=/opt/naver_price_tracker/.env
+ExecStart=/opt/naver_price_tracker/.venv/bin/python -m tracker.main daemon --config /opt/naver_price_tracker/targets.yaml --db /opt/naver_price_tracker/price_tracker.sqlite3 --interval 1800
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
