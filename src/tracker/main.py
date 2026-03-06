@@ -183,7 +183,8 @@ def main() -> int:
     try:
         if args.command == "once":
             ok, fail = asyncio.run(run_once(args.config, args.db, args.artifacts_dir))
-            return 0 if fail == 0 else 1
+            # 부분 실패(fail > 0)하더라도, 적어도 하나라도 성공했으면(ok > 0) 전체 파이프라인(대시보드 생성 등)을 이어가도록 0 반환
+            return 0 if (ok > 0 or fail == 0) else 1
 
         if args.command == "daemon":
             asyncio.run(run_daemon(args.config, args.db, args.artifacts_dir, args.interval))
