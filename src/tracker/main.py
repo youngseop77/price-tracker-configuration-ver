@@ -218,10 +218,14 @@ def main() -> int:
                 html_content = html_path.read_text(encoding="utf-8")
                 injected_script = f'<script id="data-injection">window.injectedData = {dump_json(data)};</script>'
                 import re
-                # <script id="data-injection">...</script> 부분을 새 데이터로 교체
                 new_content = re.sub(r'<script id="data-injection">.*?</script>', injected_script, html_content, flags=re.DOTALL)
                 html_path.write_text(new_content, encoding="utf-8")
-                logger.info("대시보드 HTML 데이터 주입 완료")
+                
+                # GitHub Pages 루트 접속을 위해 index.html 복제 생성
+                index_path = Path("./index.html").resolve()
+                index_path.write_text(new_content, encoding="utf-8")
+                
+                logger.info("대시보드 HTML 데이터 주입 및 index.html 생성 완료")
             
             logger.info("대시보드 업데이트 완료. dashboard.html을 브라우저로 열어 확인하세요.")
             return 0
