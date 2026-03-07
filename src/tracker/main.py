@@ -15,6 +15,7 @@ from .browser_scraper import BrowserScrapeError, collect_lowest_offer_via_browse
 from .config import TargetConfig, load_config
 from .db import ObservationStore
 from .naver_api import NaverShoppingSearchClient, collect_lowest_offer_via_api
+from .notifier import send_price_alert
 from .util import calc_change_metrics, dump_json, utc_now_iso
 
 logger = logging.getLogger("naver_price_tracker")
@@ -66,6 +67,10 @@ async def _collect_one(target: TargetConfig, app_config, artifacts_dir: str) -> 
 
 async def run_once(config_path: str, db_path: str, artifacts_dir: str) -> tuple[int, int]:
     load_dotenv(override=False)
+    email_from = os.getenv("EMAIL_FROM", "")
+    email_password = os.getenv("EMAIL_APP_PASSWORD", "")
+    email_to = os.getenv("EMAIL_TO", "")
+    changed_items: list[dict] = []  # 가격 변동 항목 수집용
     # load_config 내부에서 validate_config를 호출하여 실패 시 ValueError 발생 (Fail-Fast)
     app_config = load_config(config_path)
     store = ObservationStore(db_path)
@@ -116,7 +121,11 @@ async def run_once(config_path: str, db_path: str, artifacts_dir: str) -> tuple[
             store.insert(result)
             if result.get("success"):
                 ok += 1
-                logger.info("수집 완료 | %s | %s", target.name, result.get("price_change_status"))
+                status = result.get("price_change_status")
+                logger.info("수집 완료 | %s | %s", target.name, status)
+                # 가격 변동 항목 수집 (이메일 알림용)
+                if status in ("PRICE_DOWN", "PRICE_UP"):
+                    changed_items.append(result)
             else:
                 fail += 1
                 logger.warning("수집 미일치 | %s | %s", target.name, result.get("status"))
@@ -143,6 +152,11 @@ async def run_once(config_path: str, db_path: str, artifacts_dir: str) -> tuple[
             })
 
     store.close()
+
+    # 이메일 알림 발송 (변동된 항목이 있을 때만)
+    if changed_items:
+        send_price_alert(changed_items, email_from, email_password, email_to)
+
     return ok, fail
 
 
