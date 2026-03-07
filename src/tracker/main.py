@@ -208,26 +208,11 @@ def main() -> int:
             data = store.get_dashboard_data()
             store.close()
             
-            # JSON 저장 (백업용)
+            # JSON 저장 (dashboard.html이 fetch로 읽음)
             json_path = Path("./dashboard_data.json").resolve()
             json_path.write_text(dump_json(data), encoding="utf-8")
             
-            # HTML 주입 (로컬 파일 실행 시 CORS 회피용)
-            html_path = Path("./dashboard.html").resolve()
-            if html_path.exists():
-                html_content = html_path.read_text(encoding="utf-8")
-                injected_script = f'<script id="data-injection">window.injectedData = {dump_json(data)};</script>'
-                import re
-                new_content = re.sub(r'<script id="data-injection">.*?</script>', injected_script, html_content, flags=re.DOTALL)
-                html_path.write_text(new_content, encoding="utf-8")
-                
-                # GitHub Pages 루트 접속을 위해 index.html 복제 생성
-                index_path = Path("./index.html").resolve()
-                index_path.write_text(new_content, encoding="utf-8")
-                
-                logger.info("대시보드 HTML 데이터 주입 및 index.html 생성 완료")
-            
-            logger.info("대시보드 업데이트 완료. dashboard.html을 브라우저로 열어 확인하세요.")
+            logger.info("대시보드 업데이트 완료. dashboard_data.json 저장됨.")
             return 0
 
         if args.command == "sync-from-gcs":
