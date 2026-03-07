@@ -39,6 +39,7 @@ class TargetConfig:
     query: str | None = None
     url: str | None = None
     fallback_url: str | None = None
+    certified_item_id: str | None = None  # 인증 거래체 mallProductId
     match: MatchConfig = field(default_factory=MatchConfig)
     request: RequestConfig = field(default_factory=RequestConfig)
     browser: BrowserConfig = field(default_factory=BrowserConfig)
@@ -178,6 +179,7 @@ def load_config(path: str | Path) -> AppConfig:
                 query=item.get("query"),
                 url=item.get("url"),
                 fallback_url=item.get("fallback_url"),
+                certified_item_id=(str(item["certified_item_id"]) if item.get("certified_item_id") is not None else None),
                 match=_to_match(item.get("match")),
                 request=_to_request(item.get("request")),
                 browser=_to_browser(item.get("browser")),

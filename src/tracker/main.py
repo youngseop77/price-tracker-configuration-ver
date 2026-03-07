@@ -14,7 +14,11 @@ from .alert import check_and_alert
 from .browser_scraper import BrowserScrapeError, collect_lowest_offer_via_browser
 from .config import TargetConfig, load_config
 from .db import ObservationStore
-from .naver_api import NaverShoppingSearchClient, collect_lowest_offer_via_api
+from .naver_api import (
+    NaverShoppingSearchClient,
+    collect_certified_rank,
+    collect_lowest_offer_via_api,
+)
 from .notifier import send_price_alert
 from .util import calc_change_metrics, dump_json, utc_now_iso
 
@@ -29,12 +33,11 @@ def setup_logging(verbose: bool = False) -> None:
     )
 
 
-async def _collect_one(target: TargetConfig, app_config, artifacts_dir: str) -> dict:
+async def _collect_one(client: NaverShoppingSearchClient, target: TargetConfig, app_config, artifacts_dir: str) -> dict:
     """단일 타겟 수집 및 NO_MATCH 시 자동 폴백 로직"""
     result = None
     
     if target.mode == "api_query":
-        client = NaverShoppingSearchClient(timeout_seconds=app_config.timeout_seconds)
         try:
             result = collect_lowest_offer_via_api(client, app_config, target)
         except Exception as e:
@@ -77,10 +80,11 @@ async def run_once(config_path: str, db_path: str, artifacts_dir: str) -> tuple[
 
     ok = 0
     fail = 0
+    client = NaverShoppingSearchClient(timeout_seconds=app_config.timeout_seconds)
     for target in app_config.targets:
         logger.info("수집 시작 | %s | mode=%s", target.name, target.mode)
         try:
-            result = await _collect_one(target, app_config, artifacts_dir)
+            result = await _collect_one(client, target, app_config, artifacts_dir)
             result["collected_at"] = utc_now_iso()
 
             # 1. 직전 성공 기록 조회
@@ -108,7 +112,14 @@ async def run_once(config_path: str, db_path: str, artifacts_dir: str) -> tuple[
             else:
                 result["price_change_status"] = None
 
-            # 3. 필수 필드 기본값 보장 (의미 오염 방지 및 DB 정합성)
+            # 3. 인증 거래처 순위 수집 (추가 API 호출 필요)
+            rank_data = collect_certified_rank(client, app_config, target)
+            if rank_data:
+                result["certified_price"] = rank_data["certified_price"]
+                result["certified_rank"] = rank_data["rank"]
+                result["certified_total_sellers"] = rank_data["total"]
+
+            # 4. 필수 필드 기본값 보장 (의미 오염 방지 및 DB 정합성)
             result.setdefault("fallback_used", 0)
             result.setdefault("config_mode", target.mode)
             result.setdefault("source_mode", target.mode)

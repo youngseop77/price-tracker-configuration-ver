@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS observations (
     price_delta INTEGER,
     price_delta_pct REAL,
     alert_triggered INTEGER DEFAULT 0,
-    product_id TEXT
+    certified_price INTEGER,
+    certified_rank INTEGER,
+    certified_total_sellers INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS idx_observations_target_time
@@ -47,6 +49,9 @@ _MIGRATION_COLUMNS = [
     ("price_delta_pct", "REAL"),
     ("alert_triggered", "INTEGER DEFAULT 0"),
     ("product_id", "TEXT"),
+    ("certified_price", "INTEGER"),
+    ("certified_rank", "INTEGER"),
+    ("certified_total_sellers", "INTEGER"),
 ]
 
 
@@ -96,6 +101,9 @@ class ObservationStore:
             "price_delta",
             "price_delta_pct",
             "alert_triggered",
+            "certified_price",
+            "certified_rank",
+            "certified_total_sellers",
         ]
         values = [payload.get(col) for col in columns]
         self.conn.execute(
@@ -147,6 +155,17 @@ class ObservationStore:
                 """, (name,)
             ).fetchall()
 
+            # 3. 역대 최저/최고가 계산 (전체 히스토리 대상)
+            stats_all = self.conn.execute(
+                """
+                SELECT MIN(price) as min_p, MAX(price) as max_p
+                FROM observations
+                WHERE target_name = ? AND success = 1 AND price IS NOT NULL
+                """, (name,)
+            ).fetchone()
+            all_time_low = stats_all["min_p"]
+            all_time_high = stats_all["max_p"]
+
             if not hist_90d:
                 continue
 
@@ -168,8 +187,13 @@ class ObservationStore:
                 "avg_7d": calc_avg(7),
                 "avg_30d": calc_avg(30),
                 "avg_90d": calc_avg(90),
+                "all_time_low": all_time_low,
+                "all_time_high": all_time_high,
+                "certified_price": latest["certified_price"],
+                "certified_rank": latest["certified_rank"],
+                "certified_total": latest["certified_total_sellers"],
                 "history": [
-                    {"t": r["collected_at"], "p": r["price"]} for r in hist_90d[-100:] # 차트용은 최근 100개만
+                    {"t": r["collected_at"], "p": r["price"]} for r in hist_90d[-200:] # 차트용 200개로 확장
                 ]
             }
             data["products"].append(product_data)

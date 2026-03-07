@@ -328,49 +328,100 @@
         /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 24px;
-            margin-bottom: 48px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            margin-bottom: 32px;
         }
 
         .stat-card {
             background: var(--card-bg);
-            backdrop-filter: blur(20px);
+            padding: 24px;
+            border-radius: 20px;
             border: 1px solid var(--glass-border);
-            padding: 30px;
-            border-radius: 28px;
-            transition: all 0.4s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
+            overflow: hidden;
         }
 
         .stat-card:hover {
+            transform: translateY(-5px);
             border-color: rgba(139, 92, 246, 0.3);
-            transform: scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
 
         .stat-label {
-            font-size: 11px;
-            font-weight: 700;
+            font-size: 13px;
+            font-weight: 600;
             color: var(--text-muted);
+            margin-bottom: 12px;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 14px;
+            letter-spacing: 0.5px;
         }
 
         .stat-value {
-            font-size: 28px;
-            font-weight: 900;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
             color: #fff;
-            letter-spacing: -0.5px;
         }
 
         .stat-diff {
             font-size: 12px;
-            margin-top: 10px;
-            font-weight: 700;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        /* Chart Filter */
+        .chart-filters {
             display: flex;
+            gap: 8px;
+        }
+
+        .filter-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-pill.active {
+            background: var(--accent-primary);
+            color: #fff;
+            border-color: var(--accent-primary);
+        }
+
+        .chart-badge {
+            margin-top: 16px;
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .seller-rank-badge {
+            margin-top: 8px;
+            display: inline-flex;
             align-items: center;
             gap: 6px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--accent-primary);
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid rgba(139, 92, 246, 0.2);
         }
 
         /* Chart Area */
@@ -592,6 +643,18 @@
                 <div class="stat-value" id="currentPriceStat">-</div>
                 <div class="stat-diff" id="currentDiff">-</div>
             </div>
+            <div class="stat-card" style="border-color: rgba(16, 185, 129, 0.3);">
+                <div class="stat-label">역대 최저가</div>
+                <div class="stat-value" id="allTimeLow" style="color: var(--price-down);">-</div>
+                <div class="stat-diff" id="lowDiff"
+                    style="background: rgba(16, 185, 129, 0.1); color: var(--price-down);">BEST</div>
+            </div>
+            <div class="stat-card" style="border-color: rgba(239, 68, 68, 0.2);">
+                <div class="stat-label">역대 최고가</div>
+                <div class="stat-value" id="allTimeHigh" style="color: var(--price-up);">-</div>
+                <div class="stat-diff" id="highDiff"
+                    style="background: rgba(239, 68, 68, 0.1); color: var(--price-up);">PEAK</div>
+            </div>
             <div class="stat-card">
                 <div class="stat-label">7일 평균</div>
                 <div class="stat-value" id="avg7d">-</div>
@@ -602,21 +665,22 @@
                 <div class="stat-value" id="avg30d">-</div>
                 <div class="stat-diff" id="avg30dDiff">-</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-label">90일 평균</div>
-                <div class="stat-value" id="avg90d">-</div>
-                <div class="stat-diff" id="avg90dDiff">-</div>
-            </div>
         </div>
 
         <div class="chart-section">
             <div class="chart-header">
                 <div class="chart-title">가격 변동 추이</div>
-                <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">최근 90일 데이터 분석</div>
+                <div class="chart-filters">
+                    <div class="filter-pill" onclick="changeChartDays(7, this)">7일</div>
+                    <div class="filter-pill" onclick="changeChartDays(30, this)">30일</div>
+                    <div class="filter-pill active" onclick="changeChartDays(90, this)">90일</div>
+                    <div class="filter-pill" onclick="changeChartDays(0, this)">전체</div>
+                </div>
             </div>
             <div class="chart-container">
                 <canvas id="priceChart"></canvas>
             </div>
+            <div id="priceBadgeContainer"></div>
         </div>
 
         <div class="history-section">
@@ -626,6 +690,7 @@
                     <tr>
                         <th>수집 일시</th>
                         <th>판매 가격</th>
+                        <th>변동</th>
                         <th>판매처</th>
                         <th>상태</th>
                     </tr>
@@ -638,11 +703,13 @@
     <script>
         let dashboardData = { products: [] };
         let mainChart = null;
+        let selectedProductIndex = 0;
+        let chartDays = 90; // Default: 90 days
 
         async function init() {
             try {
-                // 항상 dashboard_data.json에서 최신 데이터 로드 (injectedData 방식 제거 - 매번 갱신 보장)
                 const response = await fetch('dashboard_data.json?v=' + Date.now());
+                if (!response.ok) throw new Error("Fetch failed");
                 dashboardData = await response.json();
 
                 renderProductList();
@@ -651,12 +718,19 @@
                 }
             } catch (e) {
                 console.error("Data load failed", e);
-                // Fallback UI or empty state
+                const list = document.getElementById('productList');
+                list.innerHTML = `
+                    <div style="padding: 20px; color: var(--price-up); font-size: 13px; line-height: 1.6;">
+                        ⚠️ 데이터 로드 실패!<br>
+                        로컬 파일을 제약 없이 보려면 아래 명령어로 서버를 실행하세요:<br><br>
+                        <code>python -m http.server 8000</code>
+                    </div>`;
+                alert("대시보드 데이터를 불러오지 못했습니다. 로컬 파일(CORS) 제약 때문일 수 있습니다. Python 서버를 실행하거나, 배포 환경에서 확인해 주세요.");
             }
         }
 
         function formatPrice(num) {
-            if (num === null || num === undefined) return '-';
+            if (num === null || num === undefined || num === 0) return '-';
             return new Intl.NumberFormat('ko-KR').format(num) + '원';
         }
 
@@ -695,6 +769,7 @@
         }
 
         function selectProduct(index) {
+            selectedProductIndex = index;
             const product = dashboardData.products[index];
             const items = document.querySelectorAll('.product-item');
             items.forEach((item, i) => {
@@ -702,11 +777,18 @@
                 else item.classList.remove('active');
             });
 
-            // Update UI
             document.getElementById('selectedTitle').innerText = product.name;
-            document.getElementById('sellerInfo').innerHTML = `<span class="seller-tag">${product.seller}</span>에서 실시간 최저가 수집 중`;
 
-            // Catalog Link
+            // Seller info + Rank
+            let sellerHtml = `<span class="seller-tag">${product.seller}</span>에서 실시간 최저가 수집 중`;
+            if (product.certified_rank) {
+                sellerHtml += `
+                    <div class="seller-rank-badge">
+                        🏆 인증점 순위: <b>${product.certified_rank}위</b> / ${product.certified_total}개 업체 중
+                    </div>`;
+            }
+            document.getElementById('sellerInfo').innerHTML = sellerHtml;
+
             const catalogBtn = document.getElementById('catalogBtn');
             if (product.product_id) {
                 catalogBtn.href = `https://search.shopping.naver.com/catalog/${product.product_id}`;
@@ -717,10 +799,12 @@
 
             // Stats
             document.getElementById('currentPriceStat').innerText = formatPrice(product.current_price);
+            document.getElementById('allTimeLow').innerText = formatPrice(product.all_time_low);
+            document.getElementById('allTimeHigh').innerText = formatPrice(product.all_time_high);
             document.getElementById('avg7d').innerText = formatPrice(product.avg_7d);
             document.getElementById('avg30d').innerText = formatPrice(product.avg_30d);
-            document.getElementById('avg90d').innerText = formatPrice(product.avg_90d);
 
+            // Diff Calculation
             const setDiff = (id, current, avg) => {
                 const el = document.getElementById(id);
                 if (!avg) { el.innerText = '-'; return; }
@@ -740,12 +824,21 @@
 
             setDiff('avg7dDiff', product.current_price, product.avg_7d);
             setDiff('avg30dDiff', product.current_price, product.avg_30d);
-            setDiff('avg90dDiff', product.current_price, product.avg_90d);
 
             const lastStatus = product.status === 'PRICE_DOWN' ? '최근 하락세 감지 ✅' : (product.status === 'PRICE_UP' ? '가격 상승중 주의 ⚠️' : '현재가 유지 중');
             document.getElementById('currentDiff').innerText = lastStatus;
 
-            renderChart(product.history);
+            // All-time low badge
+            const badgeContainer = document.getElementById('priceBadgeContainer');
+            if (product.current_price <= product.all_time_low && product.all_time_low > 0) {
+                badgeContainer.innerHTML = `<div class="chart-badge" style="background: rgba(16, 185, 129, 0.1); color: var(--price-down); border-color: rgba(16, 185, 129, 0.2);">✨ 현재 역대 최저가 달성 중!</div>`;
+            } else {
+                const diffFromLow = product.current_price - product.all_time_low;
+                const pctFromLow = ((diffFromLow / product.all_time_low) * 100).toFixed(1);
+                badgeContainer.innerHTML = `<div class="chart-badge">역대 최저가 대비 +${pctFromLow}% 높음</div>`;
+            }
+
+            refreshChartView();
             renderTable(product);
         }
 
@@ -775,6 +868,26 @@
             }
         }
 
+        function changeChartDays(days, el) {
+            chartDays = days;
+            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            refreshChartView();
+        }
+
+        function refreshChartView() {
+            const product = dashboardData.products[selectedProductIndex];
+            let history = product.history;
+
+            if (chartDays > 0) {
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - chartDays);
+                history = history.filter(h => new Date(h.t) >= cutoff);
+            }
+
+            renderChart(history);
+        }
+
         function downloadExcel() {
             const checked = document.querySelectorAll('.product-checkbox:checked');
             if (checked.length === 0) {
@@ -785,16 +898,20 @@
             const indices = Array.from(checked).map(cb => parseInt(cb.dataset.index));
             const products = indices.map(i => dashboardData.products[i]);
 
-            // CSV 헤더 (BOM 포함)
-            let csvContent = "\uFEFF상품명,수집 일시,판매 가격(원),판매처\n";
+            let csvContent = "\uFEFF상품명,수집 일시,판매 가격(원),판매처,변동\n";
 
             products.forEach(product => {
-                product.history.slice().reverse().forEach(h => {
+                const hist = product.history.slice();
+                hist.forEach((h, i) => {
                     const date = new Date(h.t);
                     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
                     const name = `"${product.name.replace(/"/g, '""')}"`;
                     const seller = `"${(product.seller || '').replace(/"/g, '""')}"`;
-                    csvContent += `${name},${dateStr},${h.p},${seller}\n`;
+
+                    let diff = 0;
+                    if (i > 0) diff = h.p - hist[i - 1].p;
+
+                    csvContent += `${name},${dateStr},${h.p},${seller},${diff}\n`;
                 });
             });
 
@@ -821,17 +938,16 @@
                 data: {
                     labels: history.map(h => {
                         const d = new Date(h.t);
-                        return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0');
+                        return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:00`;
                     }),
                     datasets: [{
+                        label: '최저가',
                         data: history.map(h => h.p),
                         borderColor: '#8b5cf6',
-                        borderWidth: 5,
-                        pointRadius: 0,
-                        pointHoverRadius: 8,
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: '#8b5cf6',
-                        pointHoverBorderWidth: 4,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#8b5cf6',
+                        pointBorderColor: 'rgba(255,255,255,0.2)',
+                        pointHoverRadius: 6,
                         fill: true,
                         backgroundColor: gradient,
                         tension: 0.4
@@ -840,25 +956,26 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: { intersect: false, mode: 'index' },
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            callbacks: {
+                                label: (ctx) => ` 가격: ${formatPrice(ctx.raw)}`
+                            }
+                        }
+                    },
                     scales: {
+                        x: { display: false },
                         y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
                             ticks: {
                                 color: '#94a3b8',
-                                font: { size: 12, weight: '600' },
-                                callback: value => value.toLocaleString() + '원'
-                            }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: {
-                                color: '#64748b',
-                                font: { size: 10, weight: '500' },
-                                maxRotation: 0,
-                                autoSkip: true,
-                                maxTicksLimit: 10
+                                font: { size: 11 },
+                                callback: (v) => v.toLocaleString()
                             }
                         }
                     }
@@ -868,17 +985,39 @@
 
         function renderTable(product) {
             const tbody = document.querySelector('#historyTable tbody');
-            tbody.innerHTML = product.history.slice().reverse().slice(0, 20).map(h => {
+            const history = product.history.slice().reverse(); // 최신순
+
+            tbody.innerHTML = history.map((h, i) => {
                 const date = new Date(h.t);
-                const dateStr = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+                const dateStr = `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+                // 변동 계산 (다음 항목과의 차이)
+                let diffStr = '-';
+                let diffColor = 'var(--text-muted)';
+                if (i < history.length - 1) {
+                    const prevPrice = history[i + 1].p;
+                    const diff = h.p - prevPrice;
+                    if (diff < 0) {
+                        diffStr = `⬇️ ${Math.abs(diff).toLocaleString()}`;
+                        diffColor = 'var(--price-down)';
+                    } else if (diff > 0) {
+                        diffStr = `⬆️ ${diff.toLocaleString()}`;
+                        diffColor = 'var(--price-up)';
+                    } else {
+                        diffStr = '0';
+                    }
+                }
+
                 return `
-                <tr>
-                    <td style="color: var(--text-muted); font-weight: 500;">${dateStr}</td>
-                    <td style="font-weight:700; color: #fff;">${formatPrice(h.p)}</td>
-                    <td><span class="seller-tag" style="background:rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 4px 10px; border-radius: 8px;">${product.seller}</span></td>
-                    <td><span class="change-badge badge-none">SUCCESS</span></td>
-                </tr>
-            `}).join('');
+                    <tr>
+                        <td style="font-size: 12px; color: var(--text-muted)">${dateStr}</td>
+                        <td style="font-weight: 700">${formatPrice(h.p)}</td>
+                        <td style="color: ${diffColor}; font-weight: 600; font-size: 12px;">${diffStr}</td>
+                        <td style="font-size: 13px">${product.seller}</td>
+                        <td><span class="status-indicator active"></span>정상</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         init();

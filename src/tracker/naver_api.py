@@ -154,3 +154,81 @@ def collect_lowest_offer_via_api(client: NaverShoppingSearchClient, app_config: 
         **best,
         "error_message": None,
     }
+
+
+def collect_certified_rank(
+    client: NaverShoppingSearchClient,
+    app_config: AppConfig,
+    target: TargetConfig,
+) -> dict[str, Any] | None:
+    """인증 거래처 순위 카운팅.
+    
+    API 결과 내에서 인증점(mallProductId)을 찾아 순위를 계산합니다.
+    """
+    if not target.certified_item_id or not target.query:
+        return None
+
+    cert_id = str(target.certified_item_id).strip()
+    catalog_id = str(target.match.product_id or "").strip()
+
+    try:
+        # 1. 카탈로그 ID가 있으면 그것으로, 없으면 쿼리로 검색 (100개)
+        search_query = catalog_id if catalog_id else target.query
+        payload = client.search(
+            query=search_query,
+            display=100,
+            exclude=app_config.exclude,
+        )
+        items = payload.get("items", []) or []
+        
+        # 2. 결과가 없으면 상품명으로 재시도
+        if not items and catalog_id:
+            payload = client.search(query=target.query, display=100, exclude=app_config.exclude)
+            items = payload.get("items", []) or []
+
+        valid_items = []
+        for item in items:
+            mid = str(item.get("mallProductId", "")).strip()
+            p_id = str(item.get("productId", "")).strip()
+            
+            # 카탈로그 ID가 지정된 경우, 해당 카탈로그 아이템만 포함 (노이즈 제거)
+            if catalog_id and p_id != catalog_id:
+                continue
+                
+            price = parse_int(item.get("lprice"), default=0)
+            if price > 0:
+                valid_items.append({"id": mid, "price": price})
+
+        if not valid_items:
+            return None
+
+        # 가격순 정렬
+        valid_items.sort(key=lambda x: x["price"])
+        
+        # 중복 제거 (입점 몰 기준)
+        seen = set()
+        unique_items = []
+        for v in valid_items:
+            if v["id"] not in seen:
+                unique_items.append(v)
+                seen.add(v["id"])
+        
+        # 우리 거래처 찾기
+        certified = next((v for v in unique_items if v["id"] == cert_id), None)
+        if not certified:
+            # 부분 일치 (긴 ID 중 일부만 입력된 경우 등)
+            certified = next((v for v in unique_items if cert_id in v["id"] or v["id"] in cert_id), None)
+            
+        if not certified:
+            return None
+
+        cert_price = certified["price"]
+        # 순위: 나보다 싸거나 같은 가격의 업체 수
+        rank = sum(1 for v in unique_items if v["price"] <= cert_price)
+        total = len(unique_items)
+
+        return {"certified_price": cert_price, "rank": rank, "total": total}
+
+    except Exception:
+        return None
+
