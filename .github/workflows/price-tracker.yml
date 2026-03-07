@@ -90,7 +90,7 @@ jobs:
            
            # Prepare public directory for GitHub Pages
            mkdir -p public
-           cp dashboard.html public/
+           cp dashboard.html public/index.html
            cp dashboard_data.json public/
            
            # 4. Sync Result back to GCS
