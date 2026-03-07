@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS observations (
     certified_total_sellers INTEGER,
     certified_lowest_price INTEGER,
     certified_between_non_auth_count INTEGER,
-    certified_cheaper_non_auth_count INTEGER
+    certified_cheaper_non_auth_count INTEGER,
+    image_url TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_observations_target_time
@@ -58,6 +59,7 @@ _MIGRATION_COLUMNS = [
     ("certified_lowest_price", "INTEGER"),
     ("certified_between_non_auth_count", "INTEGER"),
     ("certified_cheaper_non_auth_count", "INTEGER"),
+    ("image_url", "TEXT"),
 ]
 
 
@@ -113,6 +115,7 @@ class ObservationStore:
             "certified_lowest_price",
             "certified_between_non_auth_count",
             "certified_cheaper_non_auth_count",
+            "image_url",
         ]
         values = [payload.get(col) for col in columns]
         self.conn.execute(
@@ -204,6 +207,7 @@ class ObservationStore:
                 "certified_lowest_price": latest["certified_lowest_price"],
                 "certified_between_count": latest["certified_between_non_auth_count"],
                 "certified_cheaper_count": latest["certified_cheaper_non_auth_count"],
+                "image_url": latest["image_url"],
                 "history": [
                     {"t": r["collected_at"], "p": r["price"]} for r in hist_90d[-200:] # 차트용 200개로 확장
                 ]
@@ -246,8 +250,7 @@ class ObservationStore:
                 "target_name", "collected_at", "config_mode", "source_mode", "fallback_used", "success", "status",
                 "title", "price", "seller_name", "price_change_status", "prev_price",
                 "price_delta", "price_delta_pct", "product_url", "error_message",
-                "certified_price", "certified_rank", "certified_total_sellers",
-                "certified_lowest_price", "certified_between_non_auth_count", "certified_cheaper_non_auth_count"
+                "certified_lowest_price", "certified_between_non_auth_count", "certified_cheaper_non_auth_count", "image_url"
             ])
             for r_raw in rows:
                 r = dict(r_raw)
@@ -256,7 +259,8 @@ class ObservationStore:
                     r["title"], r["price"], r["seller_name"], r["price_change_status"], r["prev_price"],
                     r["price_delta"], r["price_delta_pct"], r["product_url"], r["error_message"],
                     r.get("certified_price"), r.get("certified_rank"), r.get("certified_total_sellers"),
-                    r.get("certified_lowest_price"), r.get("certified_between_non_auth_count"), r.get("certified_cheaper_non_auth_count")
+                    r.get("certified_lowest_price"), r.get("certified_between_non_auth_count"), r.get("certified_cheaper_non_auth_count"),
+                    r.get("image_url")
                 ])
         return str(out)
 

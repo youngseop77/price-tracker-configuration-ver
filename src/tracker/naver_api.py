@@ -97,6 +97,7 @@ def _normalized_item(item: dict[str, Any]) -> dict[str, Any]:
         "product_id": str(item.get("productId", "") or "") or None,
         "product_type": int(item.get("productType", 0) or 0),
         "product_url": item.get("link"),
+        "image_url": item.get("image"),
         "raw_payload": item,
     }
 
