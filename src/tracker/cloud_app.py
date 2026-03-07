@@ -2,8 +2,9 @@ import os
 import asyncio
 import logging
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from .main import run_once
@@ -24,6 +25,9 @@ INTERVAL = int(os.getenv("COLLECT_INTERVAL", "3600"))
 ENABLE_BACKGROUND_COLLECTION = os.getenv("ENABLE_BACKGROUND_COLLECTION", "false").lower() == "true"
 ENABLE_MANUAL_COLLECT = os.getenv("ENABLE_MANUAL_COLLECT", "false").lower() == "true"
 ENABLE_GCS_SYNC = os.getenv("ENABLE_GCS_SYNC", "false").lower() == "true"
+
+# 정적 파일 서빙 (dashboard_data.json 등)
+app.mount("/static", StaticFiles(directory="."), name="static")
 
 @app.on_event("startup")
 async def startup_event():
@@ -83,8 +87,17 @@ async def get_dashboard():
     """대시보드 보기"""
     html_path = Path("dashboard.html")
     if html_path.exists():
+        # dashboard.html 내부에서 fetch('dashboard_data.json') 또는 fetch('/dashboard_data.json') 호출 대응 필요
         return html_path.read_text(encoding="utf-8")
-    return "Dashboard not found. Run collection first."
+    return HTMLResponse("Dashboard not found. Run collection first or check if dashboard.html exists.", status_code=404)
+
+@app.get("/dashboard_data.json")
+async def get_dashboard_data():
+    """대시보드 데이터 JSON 서빙"""
+    json_path = Path("dashboard_data.json")
+    if json_path.exists():
+        return FileResponse(json_path)
+    raise HTTPException(status_code=404, detail="Data not found")
 
 @app.post("/collect")
 async def manual_collect():

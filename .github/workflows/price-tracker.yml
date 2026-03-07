@@ -47,54 +47,39 @@ jobs:
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           PYTHONPATH: src
         run: |
-           # 1. Sync DB from GCS
-           python -m tracker.main sync-from-gcs || echo "First run or GCS unavailable, starting fresh"
-           
-           # Show DB record count before collection
-           python -c "
-           import sqlite3, os
-           db = './price_tracker.sqlite3'
-           if os.path.exists(db):
-               conn = sqlite3.connect(db)
-               count = conn.execute('SELECT COUNT(*) FROM observations').fetchone()[0]
-               latest = conn.execute('SELECT MAX(collected_at) FROM observations').fetchone()[0]
-               print(f'DB records before: {count}, latest: {latest}')
-               conn.close()
-           else:
-               print('No DB found, starting fresh')
-           "
-           
-           # 2. Collect Prices
-           python -m tracker.main once --summary-json summary.json || echo "Some items failed, continuing with partial results"
-           
-           if [ -f "summary.json" ]; then
-             echo "### 📊 Collection Summary" >> $GITHUB_STEP_SUMMARY
-             echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
-             cat summary.json >> $GITHUB_STEP_SUMMARY
-             echo "" >> $GITHUB_STEP_SUMMARY
-             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-           fi
-           
-           # Show DB record count after collection
-           python -c "
-           import sqlite3
-           conn = sqlite3.connect('./price_tracker.sqlite3')
-           count = conn.execute('SELECT COUNT(*) FROM observations').fetchone()[0]
-           latest = conn.execute('SELECT MAX(collected_at) FROM observations').fetchone()[0]
-           print(f'DB records after collect: {count}, latest: {latest}')
-           conn.close()
-           "
-           
-           # 3. Export Dashboard UI
-           python -m tracker.main export-ui
-           
-           # Prepare public directory for GitHub Pages
-           mkdir -p public
-           cp dashboard.html public/index.html
-           cp dashboard_data.json public/
-           
-           # 4. Sync Result back to GCS
-           python -m tracker.main sync-to-gcs && echo "GCS sync SUCCESS" || echo "GCS sync FAILED (non-fatal)"
+          # 1. Sync DB from GCS
+          python -m tracker.main sync-from-gcs || echo "First run or GCS unavailable, starting fresh"
+          
+          # 2. Collect Prices (Strict failure reporting)
+          python -m tracker.main once --summary-json summary.json
+          
+          if [ -f "summary.json" ]; then
+            echo "### 📊 Collection Summary" >> $GITHUB_STEP_SUMMARY
+            echo "```json" >> $GITHUB_STEP_SUMMARY
+            cat summary.json >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "```" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Export and Package UI
+        if: always() # Run even if collection partially failed
+        run: |
+          export PYTHONPATH=src
+          # 3. Export Dashboard UI
+          python -m tracker.main export-ui
+          
+          # Prepare public directory for GitHub Pages (Security: only expose UI files)
+          mkdir -p public
+          [ -f "dashboard.html" ] && cp dashboard.html public/index.html || echo "No dashboard.html found"
+          [ -f "dashboard_data.json" ] && cp dashboard_data.json public/ || echo "No dashboard_data.json found"
+
+      - name: Sync Result back to GCS
+        if: always()
+        env:
+          GCS_BUCKET: ${{ secrets.GCS_BUCKET }}
+          PYTHONPATH: src
+        run: |
+          python -m tracker.main sync-to-gcs || echo "GCS sync SKIP or FAILED"
 
       - name: Upload Debug Artifacts on Failure
         if: failure()
@@ -105,6 +90,7 @@ jobs:
           retention-days: 3
 
       - name: Upload Dashboard to GitHub Pages
+        if: always()
         uses: actions/upload-pages-artifact@v3
         with:
           path: './public' # Only expose the public assets
@@ -117,7 +103,6 @@ jobs:
       id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
