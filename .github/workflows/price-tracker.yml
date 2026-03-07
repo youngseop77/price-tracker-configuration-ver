@@ -47,14 +47,38 @@ jobs:
            # 1. Sync DB from GCS
            python -m tracker.main sync-from-gcs || echo "First run or GCS unavailable, starting fresh"
            
-           # 2. Collect Prices (|| true ensures we always continue to save what we collected)
+           # Show DB record count before collection
+           python -c "
+           import sqlite3, os
+           db = './price_tracker.sqlite3'
+           if os.path.exists(db):
+               conn = sqlite3.connect(db)
+               count = conn.execute('SELECT COUNT(*) FROM observations').fetchone()[0]
+               latest = conn.execute('SELECT MAX(collected_at) FROM observations').fetchone()[0]
+               print(f'DB records before: {count}, latest: {latest}')
+               conn.close()
+           else:
+               print('No DB found, starting fresh')
+           "
+           
+           # 2. Collect Prices
            python -m tracker.main once || echo "Some items failed, continuing with partial results"
+           
+           # Show DB record count after collection
+           python -c "
+           import sqlite3
+           conn = sqlite3.connect('./price_tracker.sqlite3')
+           count = conn.execute('SELECT COUNT(*) FROM observations').fetchone()[0]
+           latest = conn.execute('SELECT MAX(collected_at) FROM observations').fetchone()[0]
+           print(f'DB records after collect: {count}, latest: {latest}')
+           conn.close()
+           "
            
            # 3. Export Dashboard UI
            python -m tracker.main export-ui
            
-           # 4. Sync Result back to GCS (always run to preserve data)
-           python -m tracker.main sync-to-gcs
+           # 4. Sync Result back to GCS
+           python -m tracker.main sync-to-gcs && echo "GCS sync SUCCESS" || echo "GCS sync FAILED (non-fatal)"
 
       - name: Upload Debug Artifacts on Failure
         if: failure()
