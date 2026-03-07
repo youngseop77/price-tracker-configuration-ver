@@ -1,0 +1,54 @@
+name: 이메일 테스트 (Test Email)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-email:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Send test email
+        env:
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          PYTHONPATH: src
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, 'src')
+          from tracker.notifier import send_price_alert
+          import os
+
+          # 가짜 가격 변동 데이터로 테스트
+          test_changes = [
+              {
+                  'target_name': '테스트 상품 (소니 헤드폰)',
+                  'price': 280000,
+                  'prev_price': 334950,
+                  'price_change_status': 'PRICE_DOWN',
+                  'price_delta_pct': -16.4,
+              },
+          ]
+
+          result = send_price_alert(
+              test_changes,
+              os.getenv('EMAIL_FROM'),
+              os.getenv('EMAIL_APP_PASSWORD'),
+              os.getenv('EMAIL_TO'),
+          )
+
+          if result:
+              print('테스트 이메일 발송 성공!')
+          else:
+              print('이메일 발송 실패 - Secrets 설정을 확인하세요')
+              sys.exit(1)
+          "
