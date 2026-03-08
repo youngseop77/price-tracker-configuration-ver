@@ -52,11 +52,12 @@ async def update_tracker_data():
         logger.info(f"Collection finished: ok={ok}, fail={fail}")
         
         # export-ui 로직 내장: JSON 파일만 생성하도록 변경 (HTML 주입 제거)
-        from .db import ObservationStore
-        from .util import dump_json
-        
+        from .config import load_config
+        app_config = load_config(CONFIG_PATH)
+        categories = {t.name: t.category for t in app_config.targets}
+
         store = ObservationStore(DB_PATH)
-        data = store.get_dashboard_data()
+        data = store.get_dashboard_data(categories=categories)
         store.close()
         
         # dashboard_data.json 원자적 기록 (Race Condition 방지)

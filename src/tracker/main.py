@@ -299,8 +299,12 @@ def main() -> int:
             logger.info("HTML 리포트 생성 완료 | %s", out_path)
             return 0
         if args.command == "export-ui":
+            from .config import load_config
+            app_cfg = load_config(args.config)
+            categories = {t.name: t.category for t in app_cfg.targets}
+            
             store = ObservationStore(args.db)
-            data = store.get_dashboard_data()
+            data = store.get_dashboard_data(categories=categories)
             store.close()
             
             # JSON 저장 (dashboard_data.json이 즉시 덮어쓰기되어 Race 발생 방지용)

@@ -137,8 +137,9 @@ class ObservationStore:
         ).fetchone()
         return dict(row) if row else None
 
-    def get_dashboard_data(self) -> dict[str, Any]:
+    def get_dashboard_data(self, categories: dict[str, str] | None = None) -> dict[str, Any]:
         """대시보드 시각화용 통합 데이터를 반환합니다 (7일/30일/90일 분석 포함)."""
+        categories = categories or {}
         target_names = [
             r[0] for r in self.conn.execute(
                 "SELECT DISTINCT target_name FROM observations ORDER BY target_name"
@@ -191,6 +192,7 @@ class ObservationStore:
 
             product_data = {
                 "name": name,
+                "category": categories.get(name, "기타"),
                 "current_price": latest["price"],
                 "seller": latest["seller_name"] or "네이버",
                 "status": latest["price_change_status"],
@@ -216,9 +218,9 @@ class ObservationStore:
 
         return data
 
-    def export_dashboard_json(self, out_path: str) -> str:
+    def export_dashboard_json(self, out_path: str, categories: dict[str, str] | None = None) -> str:
         """대시보드 데이터를 JSON 파일로 저장합니다."""
-        data = self.get_dashboard_data()
+        data = self.get_dashboard_data(categories=categories)
         out = Path(out_path).resolve()
         ensure_dir(out.parent)
         out.write_text(dump_json(data), encoding="utf-8")

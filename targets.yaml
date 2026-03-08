@@ -6,6 +6,7 @@ targets:
 - name: 애플 에어팟 프로 2세대
   mode: api_query
   query: 에어팟 프로 2세대 MQD83KH/A
+  category: 이어폰
   fallback_url: null
   match:
     required_keywords:
@@ -33,6 +34,7 @@ targets:
 - name: 소니 WH-1000XM5 헤드폰
   mode: api_query
   query: 소니 WH-1000XM5
+  category: 헤드폰
   fallback_url: null
   match:
     required_keywords:
@@ -62,6 +64,7 @@ targets:
 - name: 갤럭시 버즈3프로 화이트
   mode: api_query
   query: '갤럭시 버즈3프로 화이트'
+  category: 버즈
   request:
     pages: 1
     sort: sim
@@ -99,6 +102,7 @@ targets:
 - name: 갤럭시 버즈3프로 실버
   mode: api_query
   query: '갤럭시 버즈3프로 실버'
+  category: 버즈
   request:
     pages: 1
     sort: sim
@@ -136,6 +140,7 @@ targets:
 - name: 갤럭시 버즈3 화이트
   mode: api_query
   query: '갤럭시 버즈3 화이트'
+  category: 버즈
   request:
     pages: 1
     sort: sim
@@ -172,6 +177,7 @@ targets:
 - name: 갤럭시 버즈3 실버
   mode: api_query
   query: '갤럭시 버즈3 실버'
+  category: 버즈
   request:
     pages: 1
     sort: sim
@@ -210,6 +216,7 @@ targets:
 - name: 갤럭시 버즈4프로 블랙
   mode: api_query
   query: '갤럭시 버즈4프로 블랙'
+  category: 버즈
   request:
     pages: 1
     sort: sim
@@ -245,6 +252,7 @@ targets:
 - name: 갤럭시 버즈4프로 화이트
   mode: api_query
   query: '갤럭시 버즈4프로 화이트'
+  category: 버즈
   request:
     pages: 1
     sort: sim
@@ -281,6 +289,7 @@ targets:
 - name: 갤럭시 버즈4 블랙
   mode: api_query
   query: '갤럭시 버즈4 블랙'
+  category: 버즈
   request:
     pages: 1
     sort: sim
@@ -316,6 +325,7 @@ targets:
 - name: 갤럭시 버즈4 화이트
   mode: api_query
   query: '갤럭시 버즈4 화이트'
+  category: 버즈
   request:
     pages: 1
     sort: sim
@@ -351,6 +361,7 @@ targets:
 - name: 갤럭시워치8 40mm 실버
   mode: api_query
   query: '갤럭시워치8 40mm 실버'
+  category: 워치
   request:
     pages: 1
     sort: sim
@@ -381,6 +392,7 @@ targets:
 - name: 갤럭시워치8 40mm 그라파이트
   mode: api_query
   query: '갤럭시워치8 40mm 그라파이트'
+  category: 워치
   request:
     pages: 1
     sort: sim
@@ -410,6 +422,7 @@ targets:
 - name: 갤럭시워치8 44mm 실버
   mode: api_query
   query: '갤럭시워치8 44mm 실버'
+  category: 워치
   request:
     pages: 1
     sort: sim
@@ -440,6 +453,7 @@ targets:
 - name: 갤럭시워치8 44mm 그라파이트
   mode: api_query
   query: '갤럭시워치8 44mm 그라파이트'
+  category: 워치
   request:
     pages: 1
     sort: sim
@@ -470,6 +484,7 @@ targets:
 - name: 갤럭시워치8 클래식 블랙
   mode: api_query
   query: '갤럭시워치8 클래식 블랙'
+  category: 워치
   request:
     pages: 1
     sort: sim
@@ -500,6 +515,7 @@ targets:
 - name: 갤럭시워치8 클래식 화이트
   mode: api_query
   query: '갤럭시워치8 클래식 화이트'
+  category: 워치
   request:
     pages: 1
     sort: sim
@@ -530,6 +546,7 @@ targets:
 - name: 갤럭시 핏3
   mode: api_query
   query: '갤럭시 핏3'
+  category: 핏
   request:
     pages: 1
     sort: sim

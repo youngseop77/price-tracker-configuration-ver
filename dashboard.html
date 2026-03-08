@@ -129,6 +129,41 @@
             border-top: 1px solid var(--glass-border);
         }
 
+        /* Category Tabs */
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 12px 20px;
+            overflow-x: auto;
+            border-bottom: 1px solid var(--glass-border);
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .category-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-pill {
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: var(--toss-grey);
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .category-pill.active {
+            background: #ffffff;
+            color: var(--toss-blue);
+            border-color: var(--toss-blue);
+            box-shadow: 0 4px 12px rgba(49, 130, 247, 0.1);
+        }
+
         .btn-excel {
             width: 100%;
             padding: 12px;
@@ -688,6 +723,9 @@
             </label>
             <span id="checkedCount" style="font-size:11px;color:var(--text-muted);">0개 선택</span>
         </div>
+        <div class="category-tabs" id="categoryTabs">
+            <!-- Category Pills -->
+        </div>
         <ul class="product-list" id="productList">
             <!-- Loading -->
         </ul>
@@ -810,6 +848,7 @@
         let dashboardData = { products: [] };
         let mainChart = null;
         let selectedProductIndex = 0;
+        let selectedCategory = '전체';
         let chartDays = 90; // Default: 90 days
         let autoRefreshInterval = null;
 
@@ -826,9 +865,12 @@
                 if (!response.ok) throw new Error("Fetch failed");
                 dashboardData = await response.json();
 
+                renderCategoryTabs();
                 renderProductList();
                 if (dashboardData.products.length > 0) {
-                    selectProduct(selectedProductIndex < dashboardData.products.length ? selectedProductIndex : 0);
+                    // 처음 로드 시 '전체' 카테고리의 첫 번째 상품 선택
+                    const firstVisible = dashboardData.products.findIndex(p => selectedCategory === '전체' || p.category === selectedCategory);
+                    selectProduct(firstVisible >= 0 ? firstVisible : 0);
                 }
 
                 if (isPolling) {
@@ -915,9 +957,42 @@
             updateCheckedCount();
         }
 
+        function renderCategoryTabs() {
+            const container = document.getElementById('categoryTabs');
+            const categories = ['전체', ...new Set(dashboardData.products.map(p => p.category).filter(c => c))];
+
+            container.innerHTML = categories.map(cat => `
+                <div class="category-pill ${cat === selectedCategory ? 'active' : ''}" 
+                     onclick="filterCategory('${cat}')">${cat}</div>
+            `).join('');
+        }
+
+        function filterCategory(cat) {
+            selectedCategory = cat;
+            renderCategoryTabs();
+            renderProductList();
+
+            // 필터링된 리스트의 첫 번째 항목 자동 선택
+            const filteredIndices = dashboardData.products
+                .map((p, i) => (selectedCategory === '전체' || p.category === selectedCategory) ? i : -1)
+                .filter(i => i !== -1);
+
+            if (filteredIndices.length > 0) {
+                selectProduct(filteredIndices[0]);
+            }
+        }
+
         function renderProductList() {
             const list = document.getElementById('productList');
-            list.innerHTML = dashboardData.products.map((p, index) => {
+            const filtered = dashboardData.products.map((p, i) => ({ ...p, originalIndex: i }))
+                .filter(p => selectedCategory === '전체' || p.category === selectedCategory);
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--text-muted);text-align:center;">해당 카테고리에 상품이 없습니다.</div>`;
+                return;
+            }
+
+            list.innerHTML = filtered.map((p) => {
                 const change = p.change_pct ? p.change_pct.toFixed(1) + '%' : '0.0%';
                 const badgeClass = p.status === 'PRICE_DOWN' ? 'badge-down' :
                     p.status === 'PRICE_UP' ? 'badge-up' : 'badge-none';
@@ -925,8 +1000,10 @@
                 const imgUrl = p.image_url || 'https://via.placeholder.com/40x40?text=?';
 
                 return `
-                    <li class="product-item" onclick="selectProduct(${index})">
-                        <input type="checkbox" class="product-checkbox" data-index="${index}"
+                    <li class="product-item ${p.originalIndex === selectedProductIndex ? 'active' : ''}" 
+                        data-index="${p.originalIndex}"
+                        onclick="selectProduct(${p.originalIndex})">
+                        <input type="checkbox" class="product-checkbox" data-index="${p.originalIndex}"
                             onclick="event.stopPropagation(); updateCheckedCount();">
                         <img class="product-thumb" src="${imgUrl}" alt="">
                         <div class="product-info">
@@ -944,9 +1021,12 @@
         function selectProduct(index) {
             selectedProductIndex = index;
             const product = dashboardData.products[index];
+            if (!product) return;
+
             const items = document.querySelectorAll('.product-item');
-            items.forEach((item, i) => {
-                if (i === index) item.classList.add('active');
+            items.forEach((item) => {
+                const itemIndex = parseInt(item.getAttribute('data-index'));
+                if (itemIndex === index) item.classList.add('active');
                 else item.classList.remove('active');
             });
 

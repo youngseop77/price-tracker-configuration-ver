@@ -41,6 +41,7 @@ class TargetConfig:
     fallback_url: str | None = None
     certified_item_id: str | None = None  # 인증 거래처 mallProductId (certified_mall_product_id 와 호환)
     certified_mall_names: list[str] = field(default_factory=list) # 인증 거래처 몰 이름 리스트
+    category: str = "기타"  # 상품 카테고리 (분류용)
     match: MatchConfig = field(default_factory=MatchConfig)
     request: RequestConfig = field(default_factory=RequestConfig)
     browser: BrowserConfig = field(default_factory=BrowserConfig)
@@ -184,6 +185,7 @@ def load_config(path: str | Path) -> AppConfig:
                 query=item.get("query"),
                 url=item.get("url"),
                 fallback_url=item.get("fallback_url"),
+                category=str(item.get("category", "기타")),
                 match=_to_match(item.get("match")),
                 request=_to_request(item.get("request")),
                 browser=_to_browser(item.get("browser")),
