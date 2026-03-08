@@ -622,6 +622,10 @@
                 </div>
             </div>
             <div style="display: flex; gap: 12px;">
+                <button onclick="triggerCollect()" id="btnCollect" class="btn-excel"
+                    style="width: auto; padding: 12px 20px;">
+                    <span>🔄 수동 갱신</span>
+                </button>
                 <button onclick="downloadExcel()" class="btn-excel" style="width: auto; padding: 12px 20px;">
                     <span>📥 엑셀 다운로드</span>
                 </button>
@@ -719,8 +723,16 @@
         let mainChart = null;
         let selectedProductIndex = 0;
         let chartDays = 90; // Default: 90 days
+        let autoRefreshInterval = null;
 
-        async function init() {
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(() => {
+                init(true);
+            }, 5 * 60 * 1000); // 5 minutes
+        }
+
+        async function init(isPolling = false) {
             try {
                 const response = await fetch('dashboard_data.json?v=' + Date.now());
                 if (!response.ok) throw new Error("Fetch failed");
@@ -728,18 +740,75 @@
 
                 renderProductList();
                 if (dashboardData.products.length > 0) {
-                    selectProduct(0);
+                    selectProduct(selectedProductIndex < dashboardData.products.length ? selectedProductIndex : 0);
+                }
+
+                if (isPolling) {
+                    showToast("최신 데이터로 자동 갱신되었습니다.", false);
                 }
             } catch (e) {
                 console.error("Data load failed", e);
-                const list = document.getElementById('productList');
-                list.innerHTML = `
-                    <div style="padding: 20px; color: var(--price-up); font-size: 13px; line-height: 1.6;">
-                        ⚠️ 데이터 로드 실패!<br>
-                        로컬 파일을 제약 없이 보려면 아래 명령어로 서버를 실행하세요:<br><br>
-                        <code>python -m http.server 8000</code>
-                    </div>`;
-                alert("대시보드 데이터를 불러오지 못했습니다. 로컬 파일(CORS) 제약 때문일 수 있습니다. Python 서버를 실행하거나, 배포 환경에서 확인해 주세요.");
+                if (!isPolling) {
+                    const list = document.getElementById('productList');
+                    list.innerHTML = `
+                        <div style="padding: 20px; color: var(--price-up); font-size: 13px; line-height: 1.6;">
+                            ⚠️ 데이터 로드 실패!<br>
+                            로컬 파일을 제약 없이 보려면 아래 명령어로 서버를 실행하세요:<br><br>
+                            <code>python -m http.server 8000</code>
+                        </div>`;
+                    alert("대시보드 데이터를 불러오지 못했습니다. 로컬 파일(CORS) 제약 때문일 수 있습니다. Python 서버를 실행하거나, 배포 환경에서 확인해 주세요.");
+                }
+            }
+        }
+
+        function showToast(message, isError = false) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.style.background = isError ? '#ef4444' : '#1e293b';
+            toast.style.color = '#fff';
+            toast.style.padding = '12px 20px';
+            toast.style.borderRadius = '12px';
+            toast.style.fontSize = '14px';
+            toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
+            toast.style.transform = 'translateY(100%)';
+            toast.style.opacity = '0';
+            toast.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            toast.innerText = message;
+
+            container.appendChild(toast);
+
+            // Trigger reflow
+            void toast.offsetWidth;
+            toast.style.transform = 'translateY(0)';
+            toast.style.opacity = '1';
+
+            setTimeout(() => {
+                toast.style.transform = 'translateY(100%)';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        async function triggerCollect() {
+            const btn = document.getElementById('btnCollect');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<span class="spin" style="display:inline-block">⏳</span> 갱신 중...`;
+            btn.disabled = true;
+            try {
+                const res = await fetch('/collect', { method: 'POST' });
+                if (!res.ok) throw new Error("API 통신 오류");
+                const result = await res.json();
+                if (result.status === "error") {
+                    showToast("오류: " + result.message, true);
+                } else {
+                    showToast(`수집 완료! (성공: ${result.ok}, 실패: ${result.fail})`);
+                    await init(true);
+                }
+            } catch (e) {
+                showToast("수동 갱신 요청에 실패했습니다.", true);
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
             }
         }
 
@@ -1102,7 +1171,11 @@
         }
 
         init();
+        startAutoRefresh();
     </script>
+    <div id="toastContainer"
+        style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px;">
+    </div>
 </body>
 
 </html>

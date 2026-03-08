@@ -59,9 +59,12 @@ async def update_tracker_data():
         data = store.get_dashboard_data()
         store.close()
         
-        # dashboard_data.json 만 생성
+        # dashboard_data.json 원자적 기록 (Race Condition 방지)
         json_path = Path("dashboard_data.json")
-        json_path.write_text(dump_json(data), encoding="utf-8")
+        tmp_path = json_path.with_name(json_path.name + ".tmp")
+        tmp_path.write_text(dump_json(data), encoding="utf-8")
+        tmp_path.replace(json_path)
+        
         logger.info("dashboard_data.json updated.")
         
         # 3. GCS로 결과 업로드
@@ -74,13 +77,21 @@ async def update_tracker_data():
 
 async def tracker_loop():
     """배경에서 주기적으로 수집 수행"""
+    error_count = 0
     while True:
         try:
             await update_tracker_data()
+            error_count = 0
         except Exception as e:
+            error_count += 1
             logger.error(f"Tracker loop execution error: {e}")
             
-        await asyncio.sleep(INTERVAL)
+        penalty = min(600, error_count * 60) if error_count > 0 else 0
+        sleep_for = INTERVAL + penalty
+        if error_count > 0:
+            logger.warning(f"연속 에러 {error_count}회. 대기 {sleep_for}초 (백오프 {penalty}초)")
+            
+        await asyncio.sleep(sleep_for)
 
 @app.get("/", response_class=HTMLResponse)
 async def get_dashboard():

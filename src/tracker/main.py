@@ -120,6 +120,33 @@ async def run_once(config_path: str, db_path: str, artifacts_dir: str) -> tuple[
 
             # 3. 인증 거래처 순위 수집 (추가 API 호출 필요)
             rank_data = collect_certified_rank(client, app_config, target)
+            if not rank_data and target.url and target.certified_mall_names:
+                # API로 못 찾았는데 URL과 인증점 정보가 있으면 브라우저로 한 번 더 시도 (특히 카탈로그 건)
+                logger.info("인증점 API 결과 없음 -> Browser 스크래핑으로 보완 | %s", target.name)
+                try:
+                    # 임시 타겟을 만들어 브라우저 모드로 실행
+                    temp_target = TargetConfig(
+                        name=target.name,
+                        mode="browser_url",
+                        url=target.url,
+                        browser=target.browser,
+                        match=target.match,
+                        certified_item_id=target.certified_item_id,
+                        certified_mall_names=target.certified_mall_names
+                    )
+                    br_result = await collect_lowest_offer_via_browser(temp_target, artifacts_dir)
+                    if br_result.get("certified_price"):
+                        rank_data = {
+                            "certified_price": br_result["certified_price"],
+                            "rank": br_result["rank"],
+                            "total": br_result["total"],
+                            "certified_lowest_price": br_result["certified_lowest_price"],
+                            "certified_between_non_auth_count": br_result["certified_between_non_auth_count"],
+                            "certified_cheaper_non_auth_count": br_result["certified_cheaper_non_auth_count"]
+                        }
+                except Exception as e:
+                    logger.warning("인증점 브라우저 수집 실패 | %s | %s", target.name, e)
+
             if rank_data:
                 result["certified_price"] = rank_data["certified_price"]
                 result["certified_rank"] = rank_data["rank"]
@@ -192,16 +219,28 @@ async def run_once(config_path: str, db_path: str, artifacts_dir: str) -> tuple[
 
 
 async def run_daemon(config_path: str, db_path: str, artifacts_dir: str, interval_seconds: int) -> None:
+    error_count = 0
     while True:
-        # time.monotonic() 기반 간격 계산
         start_time = time.monotonic()
-        ok, fail, _ = await run_once(config_path, db_path, artifacts_dir)
-        logger.info("1회차 완료 | ok=%s fail=%s", ok, fail)
-        
+        try:
+            ok, fail, _ = await run_once(config_path, db_path, artifacts_dir)
+            logger.info("1회차 완료 | ok=%s fail=%s", ok, fail)
+            error_count = 0  # 성공 시 초기화
+        except Exception as e:
+            error_count += 1
+            logger.error("루프 실행 중 예외 발생: %s", e)
+            
         elapsed = time.monotonic() - start_time
-        # 드리프트 방지를 위해 float 대기 시간 계산 (int truncation 제거)
-        sleep_for = max(0.0, interval_seconds - elapsed)
-        logger.info("다음 실행 대기 | %.2f초", sleep_for)
+        
+        # 에러 시 기하급수적 백오프 (최대 10회 = 10분 정도 연장)
+        penalty = min(600, error_count * 60) if error_count > 0 else 0
+        sleep_for = max(0.0, (interval_seconds + penalty) - elapsed)
+        
+        if error_count > 0:
+            logger.warning("연속 에러 %d회. 다음 실행 대기 | %.2f초 (백오프 %d초 적용)", error_count, sleep_for, penalty)
+        else:
+            logger.info("다음 실행 대기 | %.2f초", sleep_for)
+            
         await asyncio.sleep(sleep_for)
 
 
@@ -264,9 +303,11 @@ def main() -> int:
             data = store.get_dashboard_data()
             store.close()
             
-            # JSON 저장 (dashboard.html이 fetch로 읽음)
+            # JSON 저장 (dashboard_data.json이 즉시 덮어쓰기되어 Race 발생 방지용)
             json_path = Path("./dashboard_data.json").resolve()
-            json_path.write_text(dump_json(data), encoding="utf-8")
+            tmp_path = json_path.with_name(json_path.name + ".tmp")
+            tmp_path.write_text(dump_json(data), encoding="utf-8")
+            tmp_path.replace(json_path)
             
             logger.info("대시보드 업데이트 완료. dashboard_data.json 저장됨.")
             return 0
