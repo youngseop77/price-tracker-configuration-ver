@@ -756,21 +756,38 @@
         }
 
         async function init() {
+            console.log("Initializing dashboard...");
             try {
-                const response = await fetch('dashboard_data.json?v=' + Date.now());
-                if (!response.ok) throw new Error("Fetch failed");
+                const url = 'dashboard_data.json?v=' + encodeURIComponent(new Date().getTime());
+                console.log("Fetching data from:", url);
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Fetch failed with status: ${response.status}`);
+
                 dashboardData = await response.json();
+                console.log("Data loaded successfully:", dashboardData);
+
+                if (!dashboardData.products || dashboardData.products.length === 0) {
+                    throw new Error("No products found in data");
+                }
 
                 renderCategoryTabs();
                 renderProductList();
-                if (dashboardData.products.length > 0) {
-                    const firstVisible = dashboardData.products.findIndex(p => selectedCategory === '전체' || p.category === selectedCategory);
-                    selectProduct(firstVisible >= 0 ? firstVisible : 0);
+
+                // 선택된 인덱스가 범위를 벗어나지 않도록 보정
+                if (selectedProductIndex >= dashboardData.products.length) {
+                    selectedProductIndex = 0;
                 }
+
+                const firstVisible = dashboardData.products.findIndex(p => selectedCategory === '전체' || p.category === selectedCategory);
+                selectProduct(firstVisible >= 0 ? firstVisible : 0);
             } catch (e) {
-                console.error("Data load failed", e);
+                console.error("Dashboard init failed:", e);
                 const list = document.getElementById('productList');
-                list.innerHTML = `<div style="padding: 20px; color: #ef4444; font-size: 13px;">⚠️ 데이터를 불러오지 못했습니다.</div>`;
+                list.innerHTML = `<div style="padding: 20px; color: #ef4444; font-size: 13px;">
+                    ⚠️ 데이터를 불러오지 못했습니다.<br>
+                    <small>${e.message}</small><br>
+                    <button onclick="init()" style="margin-top:10px; padding:5px 10px; cursor:pointer;">다시 시도</button>
+                </div>`;
             }
         }
 
