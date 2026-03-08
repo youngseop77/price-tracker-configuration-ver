@@ -40,6 +40,7 @@ class TargetConfig:
     url: str | None = None
     fallback_url: str | None = None
     certified_item_id: str | None = None  # 인증 거래처 mallProductId (certified_mall_product_id 와 호환)
+    certified_mall_names: list[str] = field(default_factory=list) # 인증 거래처 몰 이름 리스트
     match: MatchConfig = field(default_factory=MatchConfig)
     request: RequestConfig = field(default_factory=RequestConfig)
     browser: BrowserConfig = field(default_factory=BrowserConfig)
@@ -197,6 +198,12 @@ def load_config(path: str | Path) -> AppConfig:
             
             final_c_id = c_id if c_id is not None else c_mall_id
             target.certified_item_id = str(final_c_id) if final_c_id is not None else None
+            
+            # 인증점 몰 이름 파싱
+            c_mall_names = item.get("certified_mall_names", [])
+            if isinstance(c_mall_names, str):
+                c_mall_names = [c_mall_names]
+            target.certified_mall_names = [str(n) for n in (c_mall_names or [])]
             
             app.targets.append(target)
         except Exception as e:
