@@ -510,25 +510,16 @@
             }
         }
 
-        @media (max-width: 1400px) {
+        @media (max-width: 1024px) {
             .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 992px) {
-            .sidebar {
-                width: 300px;
-            }
-
-            .main-content {
-                padding: 40px;
+                grid-template-columns: repeat(3, 1fr);
             }
         }
 
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
+                height: auto;
                 overflow-y: auto;
             }
 
@@ -537,47 +528,148 @@
                 height: auto;
                 border-right: none;
                 border-bottom: 1px solid var(--glass-border);
+                padding: 16px 0;
+                position: sticky;
+                top: 0;
+            }
+
+            .logo-container {
+                margin-bottom: 12px;
+                padding: 0 20px;
+            }
+
+            .logo-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 16px;
+            }
+
+            .logo-text {
+                font-size: 18px;
+            }
+
+            .sidebar-toolbar {
+                display: none;
+            }
+
+            .product-list {
+                display: flex;
+                flex-direction: row;
+                overflow-x: auto;
+                overflow-y: hidden;
+                padding: 0 12px 4px;
+                gap: 8px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .product-item {
+                flex: 0 0 calc(50% - 16px);
+                min-width: 180px;
+                margin-bottom: 0;
+                padding: 8px 12px;
+                border-radius: 14px;
+                border: 1px solid var(--glass-border);
+                background: #f9f9f9;
+            }
+
+            .product-item.active {
+                background: #ffffff;
+                border-color: var(--toss-blue);
+            }
+
+            .product-thumb {
+                width: 32px;
+                height: 32px;
+            }
+
+            .product-name {
+                font-size: 11px;
+            }
+
+            .product-price {
+                font-size: 12px;
+            }
+
+            .sidebar-footer {
+                padding: 8px 12px;
             }
 
             .main-content {
-                padding: 32px 20px;
-                overflow-y: visible;
-                height: auto;
-            }
-
-            .chart-section,
-            .history-section {
                 padding: 24px 16px;
-                border-radius: 20px;
-                overflow: hidden;
-            }
-
-            .chart-container {
-                height: 260px;
-            }
-
-            .history-section {
-                overflow-x: auto;
-            }
-
-            table {
-                min-width: 480px;
-            }
-
-            td,
-            th {
-                padding: 10px 14px;
-                font-size: 13px;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
+                height: auto;
             }
 
             header {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 24px;
+                gap: 16px;
+                margin-bottom: 32px;
+            }
+
+            .header-title h1 {
+                font-size: 24px;
+            }
+
+            .seller-info {
+                font-size: 13px;
+                padding: 6px 12px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .stat-card {
+                padding: 16px;
+                border-radius: 18px;
+            }
+
+            .stat-value {
+                font-size: 20px;
+            }
+
+            .certified-stats-grid {
+                grid-template-columns: 1fr;
+                padding: 16px;
+                gap: 12px;
+            }
+
+            .chart-section {
+                padding: 24px 16px;
+                border-radius: 20px;
+            }
+
+            .chart-title {
+                font-size: 18px;
+            }
+
+            .chart-container {
+                height: 240px;
+            }
+
+            .history-section {
+                padding: 20px 16px;
+                border-radius: 20px;
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 450px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .product-item {
+                flex: 0 0 75%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-title h1 {
+                font-size: 20px;
             }
         }
     </style>
