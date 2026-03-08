@@ -1072,11 +1072,14 @@
             setDiff('avg30dDiff', product.current_price, product.avg_30d);
             document.getElementById('currentDiff').innerText = product.status === 'PRICE_DOWN' ? '최근 하락세 감지 ✅' : (product.status === 'PRICE_UP' ? '가격 상승 중 주의 ⚠️' : '현재가 유지 중');
 
-            if (product.current_price <= product.all_time_low && product.all_time_low > 0) {
-                badgeContainer.innerHTML = `<div class="chart-badge" style="background: rgba(49, 130, 247, 0.1); color: #3182f7;">✨ 현재 역대 최저가 달성 중!</div>`;
-            } else {
-                const pctFromLow = (((product.current_price - product.all_time_low) / product.all_time_low) * 100).toFixed(1);
-                badgeContainer.innerHTML = `<div class="chart-badge">역대 최저가 대비 +${pctFromLow}% 높음</div>`;
+            const badgeContainer = document.getElementById('priceBadgeContainer');
+            if (badgeContainer) {
+                if (product.current_price <= product.all_time_low && product.all_time_low > 0) {
+                    badgeContainer.innerHTML = `<div class="chart-badge" style="background: rgba(49, 130, 247, 0.1); color: #3182f7;">✨ 현재 역대 최저가 달성 중!</div>`;
+                } else {
+                    const pctFromLow = (((product.current_price - product.all_time_low) / product.all_time_low) * 100).toFixed(1);
+                    badgeContainer.innerHTML = `<div class="chart-badge">역대 최저가 대비 +${pctFromLow}% 높음</div>`;
+                }
             }
 
             refreshChartView();
