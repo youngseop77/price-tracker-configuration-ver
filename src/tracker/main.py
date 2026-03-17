@@ -17,6 +17,7 @@ from .browser_scraper import (
 )
 from .config import TargetConfig, load_config
 from .db import ObservationStore, RankingStore
+from .gcs_sync import download_db, upload_db
 from .naver_api import (
     NaverShoppingSearchClient,
     collect_lowest_offer_via_api,
@@ -73,7 +74,7 @@ async def _collect_one(client: NaverShoppingSearchClient, target: TargetConfig, 
         raise ValueError(f"지원하지 않는 수집 모드: {target.mode}")
 
 
-async def run_once(app_config, artifacts_dir: str, db_path: str) -> None:
+async def run_once(app_config, artifacts_dir: str, db_path: str, summary_json: str | None = None) -> None:
     ok = 0
     fail = 0
     fallback_used_count = 0
@@ -221,13 +222,25 @@ async def run_once(app_config, artifacts_dir: str, db_path: str) -> None:
 
     logger.info("최종 결과 | OK: %d, FAIL: %d, Fallback: %d, Alert: %d", ok, fail, fallback_used_count, alerts_triggered_count)
 
+    if summary_json:
+        summary_data = {
+            "ok": ok,
+            "fail": fail,
+            "fallback_used": fallback_used_count,
+            "alerts": alerts_triggered_count,
+            "collected_at": utc_now_iso()
+        }
+        Path(summary_json).write_text(dump_json(summary_data), encoding="utf-8")
+        logger.info(f"수집 요약 저장 완료: {summary_json}")
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Naver Shopping Price Tracker")
-    parser.add_argument("command", choices=["once", "monitor", "export-ui", "serve"], help="실행할 커맨드")
+    parser.add_argument("command", choices=["once", "monitor", "export-ui", "serve", "sync-from-gcs", "sync-to-gcs"], help="실행할 커맨드")
     parser.add_argument("--config", default="targets.yaml", help="설정 파일 경로")
     parser.add_argument("--db", default="price_tracker.sqlite3", help="DB 파일 경로")
     parser.add_argument("--interval", type=int, default=3600, help="모니터링 주기 (초)")
+    parser.add_argument("--summary-json", help="수집 결과 요약을 저장할 JSON 경로")
     parser.add_argument("--verbose", action="store_true", help="상세 로그 출력")
     args = parser.parse_args()
 
@@ -241,13 +254,13 @@ def main() -> None:
         return
 
     if args.command == "once":
-        asyncio.run(run_once(app_config, "artifacts", args.db))
+        asyncio.run(run_once(app_config, "artifacts", args.db, summary_json=args.summary_json))
 
     elif args.command == "monitor":
         logger.info("%d초 간격으로 모니터링을 시작합니다...", args.interval)
         while True:
             try:
-                asyncio.run(run_once(app_config, "artifacts", args.db))
+                asyncio.run(run_once(app_config, "artifacts", args.db, summary_json=args.summary_json))
             except Exception as e:
                 logger.exception("모니터링 루프 중 오류 발생")
             time.sleep(args.interval)
@@ -285,6 +298,20 @@ def main() -> None:
         finally:
             store.close()
             r_store.close()
+
+    elif args.command == "sync-from-gcs":
+        bucket = os.getenv("GCS_BUCKET")
+        if not bucket:
+            logger.error("GCS_BUCKET 환경변수가 설정되지 않았습니다.")
+            return
+        download_db(bucket, args.db)
+
+    elif args.command == "sync-to-gcs":
+        bucket = os.getenv("GCS_BUCKET")
+        if not bucket:
+            logger.error("GCS_BUCKET 환경변수가 설정되지 않았습니다.")
+            return
+        upload_db(bucket, args.db)
 
     elif args.command == "serve":
         # 간단한 HTTP 서버 실행 (대시보드 확인용)
