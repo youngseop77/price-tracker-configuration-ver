@@ -1,5 +1,8 @@
 name: Daily Price Tracker Report
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   schedule:
     # KST 기준 매일 오전 8시 실행 (UTC 23:00)
