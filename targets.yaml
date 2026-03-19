@@ -2,6 +2,9 @@ common:
   exclude: used:cbshop
   display: 50
   timeout_seconds: 20
+  email:
+    to:
+      - youn133@naver.com
 targets:
 - name: 갤럭시 버즈3 화이트
   mode: api_query

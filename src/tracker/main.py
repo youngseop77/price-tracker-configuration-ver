@@ -24,6 +24,7 @@ from .naver_api import (
     _normalized_item,
 )
 from .notifier import send_price_alert
+from .report import send_daily_report
 from .util import calc_change_metrics, dump_json, utc_now_iso
 
 logger = logging.getLogger("naver_price_tracker")
@@ -240,7 +241,7 @@ async def run_once(app_config, artifacts_dir: str, db_path: str, summary_json: s
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Naver Shopping Price Tracker")
-    parser.add_argument("command", choices=["once", "monitor", "export-ui", "serve", "sync-from-gcs", "sync-to-gcs"], help="실행할 커맨드")
+    parser.add_argument("command", choices=["once", "monitor", "export-ui", "serve", "sync-from-gcs", "sync-to-gcs", "daily-report"], help="실행할 커맨드")
     parser.add_argument("--config", default="targets.yaml", help="설정 파일 경로")
     parser.add_argument("--db", default="price_tracker.sqlite3", help="DB 파일 경로")
     parser.add_argument("--interval", type=int, default=3600, help="모니터링 주기 (초)")
@@ -326,6 +327,9 @@ def main() -> None:
         with socketserver.TCPServer(("", PORT), Handler) as httpd:
             logger.info("http://localhost:%d 에서 대시보드 서비스를 시작합니다.", PORT)
             httpd.serve_forever()
+
+    elif args.command == "daily-report":
+        send_daily_report(args.db, app_config.email.email_from, app_config.email.email_password, app_config.email.email_to, app_config.targets)
 
 
 if __name__ == "__main__":
