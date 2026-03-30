@@ -172,13 +172,12 @@ class ObservationStore:
             if not latest:
                 continue
 
-            # 2. 분석용 데이터 추출 (최대 90일)
-            hist_90d = self.conn.execute(
+            # 2. 분석용 데이터 추출 (전체 히스토리 분석 가능하도록 필터 제거)
+            hist_all = self.conn.execute(
                 """
                 SELECT collected_at, price 
                 FROM observations 
                 WHERE target_name = ? AND success = 1 AND price IS NOT NULL
-                AND collected_at >= datetime('now', '-90 days')
                 ORDER BY collected_at ASC
                 """, (name,)
             ).fetchall()
@@ -194,13 +193,13 @@ class ObservationStore:
             all_time_low = stats_all["min_p"]
             all_time_high = stats_all["max_p"]
 
-            if not hist_90d:
+            if not hist_all:
                 continue
             
-            # 기간별 평균 계산 함수
+            # 기간별 평균 계산 함수 (데이터가 부족하면 None 반환)
             def calc_avg(days):
                 cutoff = datetime.now(timezone.utc) - timedelta(days=days)
-                prices = [r["price"] for r in hist_90d if datetime.fromisoformat(r["collected_at"].replace('Z', '+00:00')) >= cutoff]
+                prices = [r["price"] for r in hist_all if datetime.fromisoformat(r["collected_at"].replace('Z', '+00:00')) >= cutoff]
                 return round(sum(prices) / len(prices)) if prices else None
 
             product_data = {
@@ -220,7 +219,7 @@ class ObservationStore:
                 "image_url": latest["image_url"],
                 "search_rank": latest.get("search_rank"),
                 "history": [
-                    {"t": r["collected_at"], "p": r["price"]} for r in hist_90d[-200:] # 차트용 200개로 확장
+                    {"t": r["collected_at"], "p": r["price"]} for r in hist_all[-500:] # 최근 500개 데이터 포인트로 확장
                 ]
             }
             data["products"].append(product_data)

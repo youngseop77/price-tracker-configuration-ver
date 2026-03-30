@@ -82,6 +82,14 @@ jobs:
         run: |
           python -m tracker.main sync-to-gcs || echo "GCS sync SKIP or FAILED"
 
+      - name: Commit and Push Changes (Data Accumulation)
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add price_tracker.sqlite3 dashboard_data.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "📊 Update price history and dashboard data [skip ci]" && git push)
+
       - name: Upload Debug Artifacts on Failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -103,6 +111,7 @@ jobs:
     permissions:
       pages: write
       id-token: write
+      contents: write # 추가: 커밋을 위해 필요할 수 있음 (이미 상단에 정의됨)
     environment:
       name: github-pages
     steps:
