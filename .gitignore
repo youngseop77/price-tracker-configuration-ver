@@ -5,3 +5,5 @@ __pycache__/
 *$py.class
 dashboard_data.json.tmp
 summary.json
+*.sqlite3
+tracker.db
