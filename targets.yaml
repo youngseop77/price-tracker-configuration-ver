@@ -78,6 +78,8 @@ common:
   - 박스
   - 중고
   - 먼지
+  - 미개봉
+  - 새상품
 targets:
 - name: 아이폰 17e 256GB
   mode: api_query
@@ -95,7 +97,9 @@ targets:
     - 아이폰
     - 17e
     - 256
-    exclude_keywords: []
+    exclude_keywords:
+    - 미개봉
+    - 새상품
     product_id: '59125506333'
     allowed_product_types:
     - 1
@@ -123,7 +127,9 @@ targets:
     - 아이폰
     - 17e
     - 512
-    exclude_keywords: []
+    exclude_keywords:
+    - 미개봉
+    - 새상품
     product_id: '59125957494'
     allowed_product_types:
     - 1
@@ -154,6 +160,8 @@ targets:
     - 256
     exclude_keywords:
     - 17e
+    - 미개봉
+    - 새상품
     product_id: '56666632837'
     allowed_product_types:
     - 1
@@ -183,6 +191,8 @@ targets:
     - 512
     exclude_keywords:
     - 17e
+    - 미개봉
+    - 새상품
     product_id: '56642218976'
     allowed_product_types:
     - 1
@@ -210,3 +220,5 @@ mall_targets:
   - 에어팟
   - 케이블
   - 충전기
+  - 미개봉
+  - 새상품

@@ -96,7 +96,15 @@ async def _extract_from_dom(page, target: TargetConfig) -> list[dict[str, Any]]:
 
         seller_nodes = row.locator(target.browser.seller_selector)
         for j in range(await seller_nodes.count()):
-            text = clean_text(await seller_nodes.nth(j).text_content() or "")
+            node = seller_nodes.nth(j)
+            text = clean_text(await node.text_content() or "")
+            
+            # 텍스트가 없거나 너무 짧으면 하위의 img alt 속성 확인 (쿠팡 등 로고 이미지 대응)
+            if not text or len(text) < 2:
+                img_alt = await node.locator("img").first.get_attribute("alt")
+                if img_alt:
+                    text = clean_text(img_alt)
+
             if len(text) >= 2 and not re.fullmatch(r"[0-9,원\s]+", text):
                 seller = text
                 break
