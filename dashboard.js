@@ -217,7 +217,7 @@ function updateCheckedCount() {
 function renderCategoryTabs() {
     const container = document.getElementById('categoryTabs');
     if (!container) return;
-    const categories = ['전체', ...new Set(dashboardData.products.map(p => p.category).filter(c => c && c !== 'S26' && c !== '스마트폰'))];
+    const categories = ['전체', ...new Set(dashboardData.products.map(p => p.category).filter(c => c))];
     container.innerHTML = categories.map(cat => `
         <div class="category-pill ${cat === selectedCategory ? 'active' : ''}" 
              onclick="filterCategory('${cat}')">${cat}</div>
@@ -543,7 +543,7 @@ function renderRankingView(kw) {
 function renderMallCategoryTabs() {
     const container = document.getElementById('mallCategoryTabs');
     if (!container || !dashboardData?.mall_reports?.categories) return;
-    const cats = Object.keys(dashboardData.mall_reports.categories).filter(c => c !== 'S26' && c !== '스마트폰');
+    const cats = Object.keys(dashboardData.mall_reports.categories).filter(c => c);
     container.innerHTML = cats.map(cat => `<div class="cat-pill ${currentMallCategory === cat ? 'active' : ''}" onclick="selectMallCategory('${cat}')">${cat}</div>`).join('');
     if (!currentMallCategory && cats.length > 0) selectMallCategory(cats[0]);
 }

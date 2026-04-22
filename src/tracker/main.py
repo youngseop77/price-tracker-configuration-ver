@@ -771,7 +771,7 @@ def main() -> None:
                         remaining_sellers.append(original_name)
                         
                 if remaining_sellers:
-                    for target_cat in ["워치", "버즈"]:
+                    for target_cat in ["아이폰17"]:
                         if target_cat not in filtered_cat_map:
                             filtered_cat_map[target_cat] = []
                         filtered_cat_map[target_cat].extend(remaining_sellers)
